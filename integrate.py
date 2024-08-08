@@ -50,13 +50,26 @@ def merge_anndata(codes):
 if __name__ == "__main__":
     # read from sample list
     df = pd.read_excel('sample_list.xlsx')
-    HS_samples = df[df['Disease'] == 'HS']
+    HS_samples = df[df['Using']]
     HS_samples = list(HS_samples['GSM'].apply(lambda x: int(x[3:])))
 
     combined_data = merge_anndata(HS_samples)
+
+    # add haniffa data
+    with open('preprocessing/pickles/haniffa.pkl', 'rb') as file:
+        hs7 = pickle.load(file)
+
+    combined_data = ad.concat([combined_data, hs7],
+                              axis = 0,
+                              join = 'outer'
+    )
+
     combined_data.obs.index = ['cell_' + str(i) for i in range(combined_data.n_obs)]
 
-    with open("combined_hs_counts.pkl", "wb") as File:
-        pickle.dump(combined_data, File)
+    combined_data.obs.batch.replace(0, "haniffa")
+
+    combined_data.write_h5ad("combined_hs_counts_new.h5ad")
+
+    # make table of names
 
 

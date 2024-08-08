@@ -74,13 +74,16 @@ def pca(hs_combined):
         # inplace subset
         subset = True
     )
+
     # normalize data
     sc.pp.regress_out(hs_combined, ["pct_counts_mt"])
     # results in genes with zero mean
 
     sc.pp.scale(hs_combined, max_value = 10)
     #sc.pp.normalize_total(hs_combined)
-    #sc.pp.log1p(hs_combined)
+
+    
+
     sc.pp.pca(hs_combined)
 
 
@@ -101,7 +104,7 @@ def make_umap(hs_combined, **kwargs):
 def plot_umap(hs_combined, filename):
     fig, ax = plt.subplots(figsize = (10,10))
     uc = hs_combined.obsm['X_umap']
-    sns.scatterplot(x = uc[:,0], y = uc[:,1], hue = hs_combined.obs["batch"], legend = "full", s = 1, ax = ax)
+    sns.scatterplot(x = uc[:,0], y = uc[:,1], hue = hs_combined.obs["batch"], legend = "full", s = 2, ax = ax)
     ax.set_title(filename)
     ax.legend(markerscale = 5)
     fig.savefig("figures" + '/' + filename + '.png', dpi = 300)
