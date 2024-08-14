@@ -24,81 +24,39 @@ from tqdm import tqdm
 data_dir = "data"
 
 sc.settings.verbosity = 1  # verbosity: errors (0), warnings (1), info (2), hints (3)
-sc.settings.set_figure_params(dpi=200, frameon=False, figsize=(5, 3), facecolor="white")
+sc.settings.set_figure_params(dpi=250, frameon=False, figsize=(5, 3), facecolor="white")
 
-"""
-with open("combined_hs_counts.pkl", "rb") as file:
-    hs_combined = pickle.load(file)
+def run_umap(path):
+    adata = sc.read_h5ad(path)
 
-# select highly varied genes on normalized
-# top genes that overlap
-# seurat_v3 expects raw counts
-sc.pp.highly_variable_genes(
-    hs_combined,
-    flavor = "seurat_v3",
-    n_top_genes = 3000,
-    batch_key = "batch",
-    # inplace subset
-    subset = True
-)
-
-# normalize data
-sc.pp.normalize_total(hs_combined)
-sc.pp.log1p(hs_combined)
-
-sc.tl.pca(hs_combined)
-
-# integrate
-sc.external.pp.harmony_integrate(hs_combined, key = "batch", basis = 'X_pca')
-
-sc.pp.neighbors(hs_combined, use_rep = "X_pca_harmony")
-
-# umap uses generated neighbors
-sc.tl.umap(hs_combined)
-
-sc.tl.leiden(hs_combined)
-
-sc.tl.louvain(hs_combined)
-
-sc.pl.umap(hs_combined, color=["GSM", "leiden", "louvain"], save = True, wspace = 0.25)
-
-with open("combined_hs_processed.pkl", "wb") as file:
-    pickle.dump(hs_combined, file)
-"""
-def pca(hs_combined):
+    sc.pp.normalize_total(adata)
+    sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(
-        hs_combined,
-        flavor = "seurat_v3",
+        adata,
+        flavor = "cell_ranger",
         n_top_genes = 3000,
-        batch_key = "batch",
-        # inplace subset
-        subset = True
+        batch_key = "GSM",
     )
 
-    # normalize data
-    sc.pp.regress_out(hs_combined, ["pct_counts_mt"])
-    # results in genes with zero mean
+    adata = adata[:, adata.var['highly_variable']]
 
-    sc.pp.scale(hs_combined, max_value = 10)
-    #sc.pp.normalize_total(hs_combined)
+    sc.pp.regress_out(adata, ["pct_counts_mt"])
+        # results in genes with zero mean
 
-    
+    sc.pp.scale(adata, max_value = 10)
 
-    sc.pp.pca(hs_combined)
+    sc.pp.pca(adata)
 
+    sc.external.pp.harmony_integrate(adata, key = "GSM", basis = 'X_pca')
 
-def make_umap(hs_combined, **kwargs):
-    # harmony integrate
-    sc.external.pp.harmony_integrate(hs_combined, key = "batch", basis = 'X_pca', **kwargs)
-
-    # mnn integrate
-    #
-    #
-
-    sc.pp.neighbors(hs_combined, use_rep = "X_pca_harmony")
+    sc.pp.neighbors(adata, use_rep = "X_pca_harmony")
 
     # umap uses generated neighbors
-    sc.tl.umap(hs_combined)
+    sc.tl.umap(adata)
+
+    adata.write_h5ad(path[:-5] + '_harmony_umap.h5ad')
+
+    return adata
 
 
 def plot_umap(hs_combined, filename):
@@ -109,14 +67,9 @@ def plot_umap(hs_combined, filename):
     ax.legend(markerscale = 5)
     fig.savefig("figures" + '/' + filename + '.png', dpi = 300)
 
-hyper_parameters = {'epsilon_harmony' : [1e-5,1e-6], 'lamb' : [0.75,0.5,0.25]}
 
-def main():
-    with open('combined_hs_no_cell_type.pkl', 'rb') as file:
-        hs_combined = pickle.load(file)
-    pca(hs_combined)
-#    for values in itertools.product(*hyper_parameters.values()):
-#        kwargs = dict(zip(hyper_parameters.keys(), values))
-#        filename = f"umap_epsilon_{kwargs['epsilon_harmony']}_lambda_{kwargs['lamb']}"
-#        make_umap(hs_combined, **kwargs)
-#        plot_umap(hs_combined, filename)
+# alternate way to save plot
+#with plt.rc_context():
+#    sc.settings.....
+#    sc.pl.func(show = False)
+#    plt.savefig("path", bbox_inches = "tight")
