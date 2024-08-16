@@ -29,10 +29,10 @@ def plot_umap(hs_combined, filename):
 
     for cluster in cluster_names:
         temp = hs_combined[hs_combined.obs["final_clustering"] == cluster,]
-        centroids[cluster] = temp.obsm['X_umap'].mean(axis = 0)
+        centroids[cluster] = temp.obsm['X_umap_harmony'].mean(axis = 0)
         
     plt.tight_layout()
-    uc = hs_combined.obsm['X_umap']
+    uc = hs_combined.obsm['X_umap_harmony']
     sns.scatterplot(x = uc[:,0], y = uc[:,1], hue = hs_combined.obs["final_clustering"], legend = "full", s = 5, ax = ax)
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), markerscale = 5)
     ax.set_title(filename)
@@ -42,6 +42,24 @@ def plot_umap(hs_combined, filename):
 
     fig.savefig(filename + '.png', dpi = 300, bbox_inches='tight')
     plt.close()
+
+def plot_umap_cell_type(hs_combined, celltype, filename):
+    fig, ax = plt.subplots(figsize = (10,10))
+        
+    plt.tight_layout()
+    uc = hs_combined.obsm['X_umap_harmony']
+
+    temp = hs_combined[hs_combined.obs["final_clustering"] == celltype,:]
+    uct = temp.obsm['X_umap_harmony']
+
+    sns.scatterplot(x = uc[:,0], y = uc[:,1], color = 'grey', alpha = 0.5, s = 5, ax = ax)
+    sns.scatterplot(x = uct[:,0], y = uct[:,1], color = 'yellow', s = 5, ax = ax)
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), markerscale = 5)
+    ax.set_title(filename)
+
+    fig.savefig(filename + '.png', dpi = 300, bbox_inches='tight')
+    plt.close()
+
     
 def plot_gene_umap(hs_combined, gene: str, filename):
     fig, ax = plt.subplots(figsize = (10,10))

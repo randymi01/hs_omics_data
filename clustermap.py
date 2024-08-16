@@ -30,14 +30,17 @@ def run_umap(path):
     adata = sc.read_h5ad(path)
 
     sc.pp.normalize_total(adata)
+    
     sc.pp.log1p(adata)
+
     sc.pp.highly_variable_genes(
         adata,
         flavor = "cell_ranger",
         n_top_genes = 3000,
-        batch_key = "GSM",
+        batch_key = "GSM" 
     )
 
+    # move after highly variable?
     adata = adata[:, adata.var['highly_variable']]
 
     sc.pp.regress_out(adata, ["pct_counts_mt"])
@@ -46,6 +49,11 @@ def run_umap(path):
     sc.pp.scale(adata, max_value = 10)
 
     sc.pp.pca(adata)
+
+    # evaluate pca performance
+    adata.uns['pca']['variance_ratio'].sum()
+    sc.pl.pca_variance_ratio(adata)
+
 
     sc.external.pp.harmony_integrate(adata, key = "GSM", basis = 'X_pca')
 
@@ -69,7 +77,19 @@ def plot_umap(hs_combined, filename):
 
 
 # alternate way to save plot
-#with plt.rc_context():
-#    sc.settings.....
+rc_params = {
+'figure.dpi': 300,
+'figure.figsize': (7, 7),
+'figure.facecolor': 'white'
+}
+#with plt.rc_context(rc = rc_params):
 #    sc.pl.func(show = False)
 #    plt.savefig("path", bbox_inches = "tight")
+
+# with plt.rc_context(rc = rc_params):
+#     sc.pl.umap(adata, color = ["batch"], color_map = "viridis", show = False)
+#     plt.legend(title = "GSE", loc = 'center left', bbox_to_anchor = (1,0.5))
+#     plt.title("Harmony Batch Integration All HS Disease Samples")
+#     plt.savefig("t.png", bbox_inches = "tight")
+
+

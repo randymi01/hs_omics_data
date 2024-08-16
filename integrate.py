@@ -49,10 +49,24 @@ def merge_anndata(codes):
 
 if __name__ == "__main__":
     # read from sample list
-    df = pd.read_excel('sample_list.xlsx')
-    HS_samples = df[df['Using']]
-    HS_samples = list(HS_samples['GSM'].apply(lambda x: int(x[3:])))
+    #df = pd.read_excel('sample_list.xlsx')
+    #HS_samples = df[df['Using']]
+    #HS_samples = list(HS_samples['GSM'].apply(lambda x: int(x[3:])))
 
+    HS_samples = [
+        4679492,
+        4679493,
+        4679494,
+        4679495,
+        4679496,
+        4679497,
+        4679498,
+        4679499,
+        4712971,
+        4712972,
+        7754889,
+        7754890
+    ]
     combined_data = merge_anndata(HS_samples)
 
     # add haniffa data
@@ -68,7 +82,7 @@ if __name__ == "__main__":
 
     combined_data.obs.batch.replace(0, "haniffa")
 
-    combined_data.write_h5ad("combined_hs_counts_new.h5ad")
+    combined_data.write_h5ad("combined_hs_counts_old_portal.h5ad")
 
     # make table of names
 
