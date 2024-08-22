@@ -35,7 +35,7 @@ def run_umap(path):
 
     sc.pp.highly_variable_genes(
         adata,
-        flavor = "cell_ranger",
+        flavor = "seurat",
         n_top_genes = 3000,
         batch_key = "GSM" 
     )

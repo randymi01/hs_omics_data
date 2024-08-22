@@ -4,7 +4,6 @@ import numpy as np
 import scanpy as sc
 from glob import glob
 import os
-import scvi
 import pickle
 from scipy import sparse
 import anndata as ad
