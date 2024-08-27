@@ -29,24 +29,27 @@ sc.settings.set_figure_params(dpi=250, frameon=False, figsize=(5, 3), facecolor=
 def run_umap(path):
     adata = sc.read_h5ad(path)
 
+    sc.pp.highly_variable_genes(
+        adata,
+        flavor = "seurat_v3",
+        n_top_genes = 4000
+    )
+
     sc.pp.normalize_total(adata)
     
     sc.pp.log1p(adata)
 
-    sc.pp.highly_variable_genes(
-        adata,
-        flavor = "seurat",
-        n_top_genes = 3000,
-        batch_key = "GSM" 
-    )
+    # load the grch38 cell cycle genes pickle
+    sc.tl.score_genes_cell_cycle(adata, s_genes = s_genes, g2m_genes = g2m_genes, use_raw = False)
 
     # move after highly variable?
     adata = adata[:, adata.var['highly_variable']]
 
-    sc.pp.regress_out(adata, ["pct_counts_mt"])
+    sc.pp.regress_out(adata, ["pct_counts_mt", "pct_counts_ribo", "S_score", "G2M_score"])
+
         # results in genes with zero mean
 
-    sc.pp.scale(adata, max_value = 10)
+    sc.pp.scale(adata)
 
     sc.pp.pca(adata)
 
@@ -61,6 +64,8 @@ def run_umap(path):
 
     # umap uses generated neighbors
     sc.tl.umap(adata)
+
+    sc.tl.leiden(adata, 0.2, key_added = "leiden_0-2")
 
     adata.write_h5ad(path[:-5] + '_harmony_umap.h5ad')
 
@@ -91,5 +96,46 @@ rc_params = {
 #     plt.legend(title = "GSE", loc = 'center left', bbox_to_anchor = (1,0.5))
 #     plt.title("Harmony Batch Integration All HS Disease Samples")
 #     plt.savefig("t.png", bbox_inches = "tight")
+
+
+#### SNIPPETS ####
+
+# read in marker list and find genes that exist within current list:
+mlist = pd.read_excel('path-to-mlist.xlsx')
+marker_genes = mlist[mlist.columns[mlist.columns.str.endswith('gene')]].to_dict(orient = "list")
+
+marker_genes_exist = {}
+
+for key, value in marker_genes.items():
+    gene_list = []
+    for gene in value:
+            if gene in adata.var['symbol'].values:
+                    gene_list.append(gene)
+    marker_genes_exist[key] = gene_list
+marker_genes_exist
+
+# using rank genes
+sc.tl.rank_genes_groups(adata, "leiden_0-2", key_added = "leiden_0-2_rank-genes", n_genes = 3)
+
+with plt.rc_context():
+    matplotlib.rcParams['patch.edgecolor'] = 'black'
+    fig, ax = plt.subplots(figsize = (60,15))
+    sc.pl.rank_genes_groups_dotplot(adata, groupby="leiden_0-2", key = "leiden_0-2_rank-genes", show = False, ax = ax)
+    plt.tight_layout()
+    fig.savefig("GSE154775/leiden_rank_genes_0-2-clust.png", bbox_inches = "tight", dpi = 300)
+    plt.close()
+
+
+# using marker list
+with plt.rc_context():
+    matplotlib.rcParams['patch.edgecolor'] = 'black'
+    fig, ax = plt.subplots(figsize = (100,15))
+    sc.pl.dotplot(adata, marker_genes_exist, groupby="leiden_0-2", standard_scale="var", show = False, ax = ax, use_raw = False)
+    plt.tight_layout()
+    fig.savefig("GSE154775/leiden_marker_genes_0-2-clust.png", bbox_inches = "tight", dpi = 300)
+    plt.close()
+
+# setting marker groups
+adata.obs.loc[adata.obs['leiden_0-2'].isin(['1', '0', '4', '2', '15', '14', '13', '12', '3']), 'label'] = 'Keratinocyte'
 
 
