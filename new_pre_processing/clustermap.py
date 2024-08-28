@@ -101,7 +101,7 @@ rc_params = {
 #### SNIPPETS ####
 
 # read in marker list and find genes that exist within current list:
-mlist = pd.read_excel('path-to-mlist.xlsx')
+mlist = pd.read_excel('mlist.xlsx', skiprows = 1, index_col = 0)
 marker_genes = mlist[mlist.columns[mlist.columns.str.endswith('gene')]].to_dict(orient = "list")
 
 marker_genes_exist = {}
@@ -112,17 +112,31 @@ for key, value in marker_genes.items():
             if gene in adata.var['symbol'].values:
                     gene_list.append(gene)
     marker_genes_exist[key] = gene_list
-marker_genes_exist
+
+marker_genes_exist_reduced = {cluster : marker[:10 if len(marker) >= 10 else len(marker)] for cluster, marker in marker_genes_exist.items()}
+
+
+sc.tl.leiden(adata, resolution = 0.2, neighbors_key = "harmony", key_added = "leiden_0-2_harmony")
+sc.tl.leiden(adata, resolution = 0.2, neighbors_key = "scVI_default", key_added = "leiden_0-2_scvi")
+sc.tl.leiden(subclust_5, resolution = 2, neighbors_key = "scVI_default", key_added = "sub5_leiden_2_scvi")
 
 # using rank genes
-sc.tl.rank_genes_groups(adata, "leiden_0-2", key_added = "leiden_0-2_rank-genes", n_genes = 3)
+sc.tl.rank_genes_groups(adata, "leiden_0-2", key_added = "leiden_0-2_rank-genes", n_genes = 3, method = "t-test")
+
+sc.tl.filter_rank_genes_groups(
+    adata,
+    min_in_group_fraction=0.2,
+    max_out_group_fraction=0.2,
+    key="leiden_0-2_scvi_rank-genes_t-test",
+    key_added="leiden_0-2_scvi_rank-genes_t-test-filtered",
+)
 
 with plt.rc_context():
     matplotlib.rcParams['patch.edgecolor'] = 'black'
-    fig, ax = plt.subplots(figsize = (60,15))
-    sc.pl.rank_genes_groups_dotplot(adata, groupby="leiden_0-2", key = "leiden_0-2_rank-genes", show = False, ax = ax)
+    fig, ax = plt.subplots(figsize = (40,15))
+    sc.pl.rank_genes_groups_dotplot(adata, groupby="leiden_0-2_scvi", key = "leiden_0-2_scvi_rank-genes_t-test", show = False, ax = ax, n_genes = 3)
     plt.tight_layout()
-    fig.savefig("GSE154775/leiden_rank_genes_0-2-clust.png", bbox_inches = "tight", dpi = 300)
+    fig.savefig("leiden_0-2_scvi_rank_genes_t-test-3.png", bbox_inches = "tight", dpi = 300)
     plt.close()
 
 
@@ -130,9 +144,17 @@ with plt.rc_context():
 with plt.rc_context():
     matplotlib.rcParams['patch.edgecolor'] = 'black'
     fig, ax = plt.subplots(figsize = (100,15))
-    sc.pl.dotplot(adata, marker_genes_exist, groupby="leiden_0-2", standard_scale="var", show = False, ax = ax, use_raw = False)
+    sc.pl.dotplot(adata, marker_genes_exist_sc, groupby="leiden_0-2_scvi", standard_scale="var", show = False, ax = ax, use_raw = False)
     plt.tight_layout()
-    fig.savefig("GSE154775/leiden_marker_genes_0-2-clust.png", bbox_inches = "tight", dpi = 300)
+    fig.savefig("leiden_marker_genes_0-2-scvi-clust-sc.png", bbox_inches = "tight", dpi = 300)
+    plt.close()
+
+with plt.rc_context():
+    matplotlib.rcParams['patch.edgecolor'] = 'black'
+    fig, ax = plt.subplots(figsize = (100,15))
+    sc.pl.dotplot(subclust_5, marker_genes_exist_reduced, groupby="sub5_leiden_2_scvi", standard_scale="var", show = False, ax = ax, use_raw = False)
+    plt.tight_layout()
+    fig.savefig("sub5-2-marker.png", bbox_inches = "tight", dpi = 300)
     plt.close()
 
 # setting marker groups
