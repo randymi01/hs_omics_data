@@ -7,3 +7,4 @@ __pycache__/
 *.tar
 *.pkl
 *.h5ad
+data/GSE173706/
