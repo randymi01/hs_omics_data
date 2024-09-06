@@ -118,7 +118,6 @@ def preprocess(gsm):
 
     ## filter cells and genes
     sc.pp.filter_cells(adata, min_genes = 300)
-    sc.pp.filter_cells(adata, max_genes = 6000)
 
     # remove cells with mitocondrial dna > 20%
     adata = adata[adata.obs["pct_counts_mt"] < 20]
@@ -126,14 +125,19 @@ def preprocess(gsm):
     # remove cells with ribosomal dna > 55%
     adata = adata[adata.obs["pct_counts_ribo"] < 55]
 
-    # remove cells with rna counts > 40000
-    adata = adata[adata.obs["total_counts"] < 40000]
+    
 
     # remove genes with less than 3 cells
     sc.pp.filter_genes(adata, min_cells = 3)
 
     # remove doublets using scanpy.pp.scrublet
     sc.pp.scrublet(adata, verbose=True)
+
+    # moved these steps to after scrublet since they might be removing doublets
+    sc.pp.filter_cells(adata, max_genes = 6000)
+    
+    # remove cells with rna counts > 40000
+    adata = adata[adata.obs["total_counts"] < 40000]
 
     adata = adata[~adata.obs["predicted_doublet"]]
 
