@@ -94,4 +94,22 @@ def plot_gene_umap_sc(adata, gene: str):
             plt.text(x_umap, y_umap, cluster, fontsize=12, ha='center', color='grey')
         plt.savefig(f"{gene}_HS.png", dpi = 300, bbox_inches = 'tight')
 
-    
+
+def scplot(func, figsize = (7,7), *args, **kwargs):
+    rc_params = {
+        'figure.dpi': 300,
+        'figure.figsize': (7, 7),
+        'figure.facecolor': 'white'
+        }
+    with plt.rc_context(rc = rc_params):
+        has_title = False
+        if "title" in kwargs:
+            has_title = True
+            title = kwargs["title"]
+            del kwargs["title"]
+
+        sc.settings.set_figure_params(dpi = 300, frameon=False, figsize = figsize, facecolor = "white")
+        func(*args, **kwargs, show = False)
+        
+        if has_title:
+            plt.savefig(f"{title}.png", dpi = 300, bbox_inches = 'tight')
