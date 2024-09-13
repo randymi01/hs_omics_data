@@ -6,11 +6,11 @@ import os
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 
-# pd.DataFrame(adata.var.index, columns = ["symbol"]).to_csv("/share/studies/Dermatology_Data/HS_Data_Portal/scanpy_seq/healthy data/preprocessing/GSE249793/GSM7964425/GSM7964425_syd.csv", index = False)
+# pd.DataFrame(adata.var.index, columns = ["id"]).to_csv("/share/studies/Dermatology_Data/HS_Data_Portal/scanpy_seq/healthy data/preprocessing/GSE249793/GSM7964425/GSM7964425_syd.csv", index = False)
 
 
 @click.command()
-@click.option('-c','--codes', required=True, help='file path to csv containing ENSG ensembl gene ids in a csv. Colname is id.')
+@click.option('-c','--codes', required=True, help='file path to csv containing ENSG ensembl gene ids in a csv. Should be first col.')
 @click.option('-o','--output_path', required=False, show_default = True, default = "symbols.csv", help='file path for where library should be output')
 @click.option('-n', '--null', required = False, is_flag = True, default = False, help = "whether to replace unmatched or novel transcript symbols with null instead of gene-id")
 def main(codes,output_path, null):
